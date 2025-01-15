@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/Woland-prj/microtasks_sso/internal/app"
 	"github.com/Woland-prj/microtasks_sso/internal/config"
 	"github.com/Woland-prj/microtasks_sso/internal/lib/logger/handlers/slogpretty"
 )
@@ -21,7 +22,14 @@ func main() {
 	log.Info("Starting app...")
 	log.Debug("Logger init")
 
-	// TODO: init app
+	application := app.New(
+		log,
+		conf.GRPC.Port,
+		conf.StoragePath,
+		conf.TokenTTL,
+	)
+
+	application.GRPCServ.MustRun()
 
 	// TODO: init storage
 }
