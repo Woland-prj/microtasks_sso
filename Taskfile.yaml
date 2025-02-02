@@ -1,0 +1,11 @@
+version: "3"
+
+tasks:
+  migrate:
+    desc: "Run migrations"
+    cmds:
+      - go run ./cmd/migrator --storage-path=./storage/sso.db --migrations-path=./migrations
+  run-dev:
+    desc: "Run server in dev mode"
+    cmds:
+      - go run ./cmd/sso/main.go --config ./config/local.yaml

@@ -3,6 +3,8 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Woland-prj/microtasks_sso/internal/app"
 	"github.com/Woland-prj/microtasks_sso/internal/config"
@@ -16,22 +18,34 @@ const (
 )
 
 func main() {
+	// Load config
 	conf := config.MustLoad()
 
+	// Setup logger
 	log := mustSetupLogger(conf.Env)
 	log.Info("Starting app...")
 	log.Debug("Logger init")
 
+	// Run app
 	application := app.New(
 		log,
 		conf.GRPC.Port,
 		conf.StoragePath,
-		conf.TokenTTL,
+		conf.TokenTTL.Auth,
+		conf.TokenTTL.Refresh,
 	)
 
-	application.GRPCServ.MustRun()
+	go application.GRPCServ.MustRun()
 
-	// TODO: init storage
+	// Graceful shutdown
+	chanStop := make(chan os.Signal, 1)
+	signal.Notify(chanStop, syscall.SIGTERM, syscall.SIGINT)
+
+	stopSignal := <-chanStop
+	log.Info("Trying stop application", slog.String("signal", stopSignal.String()))
+
+	application.GRPCServ.Stop()
+	log.Info("Application stopped")
 }
 
 func mustSetupLogger(env string) *slog.Logger {

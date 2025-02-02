@@ -6,6 +6,8 @@ import (
 	"net"
 
 	authgrpc "github.com/Woland-prj/microtasks_sso/internal/grpc/auth"
+	"github.com/Woland-prj/microtasks_sso/internal/services"
+	"github.com/go-playground/validator/v10"
 
 	"google.golang.org/grpc"
 )
@@ -16,10 +18,15 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, port int) *App {
+func New(
+	log *slog.Logger,
+	port int,
+	services *services.Services,
+	validate *validator.Validate,
+) *App {
 	gRPCServer := grpc.NewServer()
 
-	authgrpc.Register(gRPCServer)
+	authgrpc.Register(gRPCServer, services.Auth, validate)
 
 	return &App{
 		log:        log,

@@ -8,15 +8,20 @@ import (
 )
 
 type Config struct {
-	Env         string        `yaml:"env" env-default:"local"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
-	GRPC        GRPCConfig    `yaml:"grpc" env-required:"true"`
+	Env         string         `yaml:"env" env-default:"local"`
+	StoragePath string         `yaml:"storage_path" env-required:"true"`
+	TokenTTL    TokenTTLConfig `yaml:"token_ttl" env-required:"true"`
+	GRPC        GRPCConfig     `yaml:"grpc" env-required:"true"`
 }
 
 type GRPCConfig struct {
 	Port    int           `yaml:"port" env-required:"true"`
 	Timeout time.Duration `yaml:"timeout" env-required:"true"`
+}
+
+type TokenTTLConfig struct {
+	Auth    time.Duration `yaml:"auth" env-required:"true"`
+	Refresh time.Duration `yaml:"refresh" env-required:"true"`
 }
 
 // MustLoad trying to read config in yaml format.
