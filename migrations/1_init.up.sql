@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_email ON users(email);
 
 CREATE TABLE IF NOT EXISTS apps (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  name          TEXT NOT NULL UNIQUE,
-  auth_secret   TEXT NOT NULL UNIQUE,
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  name           TEXT NOT NULL UNIQUE,
+  auth_secret    TEXT NOT NULL UNIQUE,
   refresh_secret TEXT NOT NULL UNIQUE
 )

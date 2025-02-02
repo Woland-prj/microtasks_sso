@@ -5,6 +5,15 @@ tasks:
     desc: "Run migrations"
     cmds:
       - go run ./cmd/migrator --storage-path=./storage/sso.db --migrations-path=./migrations
+  test-migrate:
+    desc: "Run migrations for tests"
+    cmds:
+      - go run ./cmd/migrator --storage-path=./storage/sso.db --migrations-path=./tests/migrations --migrations-table=migrations_test
+  run-test:
+    desc: "Run tests"
+    deps: [test-migrate]
+    cmds:
+      - go test -v -cover ./tests
   run-dev:
     desc: "Run server in dev mode"
     cmds:

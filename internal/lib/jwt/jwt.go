@@ -18,12 +18,12 @@ func NewTokenPair(
 	authDuration time.Duration,
 	refreshDuration time.Duration,
 ) (*entities.JwtTokenPair, error) {
-	authToken, err := newToken(user, app, authDuration, _tokenTypeAuth)
+	authToken, err := newToken(user, app.ID, app.AuthSecret, authDuration)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := newToken(user, app, authDuration, _tokenTypeRefresh)
+	refreshToken, err := newToken(user, app.ID, app.RefreshSecret, refreshDuration)
 	if err != nil {
 		return nil, err
 	}
@@ -36,9 +36,9 @@ func NewTokenPair(
 
 func newToken(
 	user *entities.User,
-	app *entities.App,
+	appId int64,
+	secret string,
 	ttl time.Duration,
-	tokenType string,
 ) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
@@ -46,15 +46,9 @@ func newToken(
 	claims["id"] = user.UID
 	claims["email"] = user.Email
 	claims["exp"] = time.Now().Add(ttl).Unix()
-	claims["app_id"] = app.ID
+	claims["app_id"] = appId
 
-	var tokenString string
-	var err error
-	if tokenType == _tokenTypeRefresh {
-		tokenString, err = token.SignedString([]byte(app.RefreshSecret))
-	} else {
-		tokenString, err = token.SignedString([]byte(app.AuthSecret))
-	}
+	tokenString, err := token.SignedString([]byte(secret))
 
 	if err != nil {
 		return "", err

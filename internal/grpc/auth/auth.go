@@ -62,7 +62,7 @@ func (s *serverAPI) Login(
 	}
 
 	return &ssov1.LoginRespones{
-		AuthToken:    tokens.RefreshToken,
+		AuthToken:    tokens.AuthToken,
 		RefreshToken: tokens.RefreshToken,
 	}, nil
 }

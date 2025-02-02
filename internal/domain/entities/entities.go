@@ -7,7 +7,7 @@ type User struct {
 }
 
 type App struct {
-	ID            int32
+	ID            int64
 	Name          string
 	AuthSecret    string
 	RefreshSecret string
