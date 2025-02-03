@@ -39,7 +39,12 @@ func (s *Storage) SaveUser(ctx context.Context, user *entities.User) (int64, err
 
 	res, err := stmt.ExecContext(ctx, user.Email, user.PassHash)
 	if err != nil {
-		var sqliteErr *sqlite3.Error
+		var sqliteErr sqlite3.Error
+		// if errors.As(err, &sqliteErr) {
+		// 	fmt.Println(fmt.Sprintf("its sqlite error %v", sqliteErr))
+		// } else {
+		// 	fmt.Printf("Not sqlier error %s", err.Error())
+		// }
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			return 0, fmt.Errorf("%s: %w", op, cerrors.NewAlreadyExistsError(fmt.Sprintf("user %d", user.UID)))
 		}

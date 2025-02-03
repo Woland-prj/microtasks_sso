@@ -83,10 +83,11 @@ func (s *serverAPI) Register(
 	uid, err := s.authService.Register(ctx, dto)
 
 	if err != nil {
-		if errors.Is(err, &cerrors.AlreadyExistsError{}) {
+		var cErr cerrors.AlreadyExistsError
+		if errors.As(err, &cErr) {
 			return nil, status.Error(codes.AlreadyExists, "User already exists")
 		}
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, "Internal error")
 	}
 
 	return &ssov1.RegisterRespones{

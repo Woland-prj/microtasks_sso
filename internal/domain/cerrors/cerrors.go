@@ -6,24 +6,24 @@ type NotFoundError struct {
 	Subject string
 }
 
-func (e *NotFoundError) Error() string {
-	return fmt.Sprintf("%s not found", e.Subject)
+func (err NotFoundError) Error() string {
+	return fmt.Sprintf("%s not found", err.Subject)
 }
 
-func NewNotFoundError(subject string) *NotFoundError {
-	return &NotFoundError{Subject: subject}
+func NewNotFoundError(subject string) NotFoundError {
+	return NotFoundError{Subject: subject}
 }
 
 type AlreadyExistsError struct {
 	Subject string
 }
 
-func (e *AlreadyExistsError) Error() string {
-	return fmt.Sprintf("Entity %s alredy exists", e.Subject)
+func (err AlreadyExistsError) Error() string {
+	return fmt.Sprintf("Entity %s alredy exists", err.Subject)
 }
 
-func NewAlreadyExistsError(subject string) *AlreadyExistsError {
-	return &AlreadyExistsError{Subject: subject}
+func NewAlreadyExistsError(subject string) AlreadyExistsError {
+	return AlreadyExistsError{Subject: subject}
 }
 
 type CriticalInternalError struct {
@@ -31,20 +31,20 @@ type CriticalInternalError struct {
 	Subject error
 }
 
-func (e *CriticalInternalError) Error() string {
-	return fmt.Sprintf("Critical error in %s: %s", e.Place, e.Subject.Error())
+func (err CriticalInternalError) Error() string {
+	return fmt.Sprintf("Critical error in %s: %s", err.Place, err.Subject.Error())
 }
 
-func NewCriticalInternalError(place string, subject error) *CriticalInternalError {
-	return &CriticalInternalError{Place: place, Subject: subject}
+func NewCriticalInternalError(place string, subject error) CriticalInternalError {
+	return CriticalInternalError{Place: place, Subject: subject}
 }
 
 type InvalidCredentialsError struct{}
 
-func (e *InvalidCredentialsError) Error() string {
+func (err InvalidCredentialsError) Error() string {
 	return fmt.Sprintf("Invalid credentials")
 }
 
-func NewInvalidCredentialsError() *InvalidCredentialsError {
-	return &InvalidCredentialsError{}
+func NewInvalidCredentialsError() InvalidCredentialsError {
+	return InvalidCredentialsError{}
 }

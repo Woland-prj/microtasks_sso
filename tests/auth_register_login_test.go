@@ -77,3 +77,36 @@ func parseToken(token string, secret string) (*jwt.Token, error) {
 		return []byte(secret), nil
 	})
 }
+
+func TestRegisterLogin_DoubleRegister(t *testing.T) {
+	ctx, st := suite.New(t)
+	email := gofakeit.Email()
+	pass := randomFakePassword()
+
+	respReg, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
+		Email:    email,
+		Password: pass,
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, respReg.GetUid())
+
+	respReg, err = st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
+		Email:    email,
+		Password: pass,
+	})
+
+	require.Error(t, err)
+	assert.Empty(t, respReg.GetUid())
+	assert.ErrorContains(t, err, "User already exists")
+
+	respLogin, err := st.AuthClient.Login(ctx, &ssov1.LoginRequest{
+		Email:    email,
+		Password: pass,
+		AppId:    appId,
+	})
+
+	require.NoError(t, err)
+	assert.NotEmpty(t, respLogin.GetAuthToken())
+	assert.NotEmpty(t, respLogin.GetRefreshToken())
+}
