@@ -59,8 +59,11 @@ func (s *Storage) SaveUser(ctx context.Context, user *entities.User) (int64, err
 	return uid, nil
 }
 
-func (s *Storage) GetUser(ctx context.Context, email string) (*entities.User, error) {
-	const op = "storage.sqlite.GetUser"
+func (s *Storage) GetUserByEmail(
+	ctx context.Context, 
+	email string,
+) (*entities.User, error) {
+	const op = "storage.sqlite.GetUserByEmail"
 
 	stmt, err := s.db.PrepareContext(ctx, "SELECT id, email, pass_hash FROM users WHERE email = ?")
 	if err != nil {
@@ -75,6 +78,32 @@ func (s *Storage) GetUser(ctx context.Context, email string) (*entities.User, er
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("%s: %w", op, cerrors.NewNotFoundError(fmt.Sprintf("user %s", email)))
+		}
+		return nil, fmt.Errorf("%s: %w", op, cerrors.NewCriticalInternalError("stmt.ExecContext", err))
+	}
+
+	return &user, nil
+}
+
+func (s *Storage) GetUserById(
+	ctx context.Context, 
+	uid int64,
+) (*entities.User, error) {
+	const op = "storage.sqlite.GetUserById"
+
+	stmt, err := s.db.PrepareContext(ctx, "SELECT id, email, pass_hash FROM users WHERE id = ?")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, cerrors.NewCriticalInternalError("s.db.PrepareContext", err))
+	}
+
+	row := stmt.QueryRowContext(ctx, uid)
+
+	var user entities.User
+	err = row.Scan(&user.UID, &user.Email, &user.PassHash)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%s: %w", op, cerrors.NewNotFoundError(fmt.Sprintf("user %d", uid)))
 		}
 		return nil, fmt.Errorf("%s: %w", op, cerrors.NewCriticalInternalError("stmt.ExecContext", err))
 	}

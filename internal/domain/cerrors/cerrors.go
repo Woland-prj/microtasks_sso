@@ -48,3 +48,24 @@ func (err InvalidCredentialsError) Error() string {
 func NewInvalidCredentialsError() InvalidCredentialsError {
 	return InvalidCredentialsError{}
 }
+
+const (
+	TokenExpired = "expired"
+	TokenBadFormat = "bad format"
+)
+
+type InvalidTokenError struct{
+	subject string
+}
+
+func (err InvalidTokenError) Error() string {
+	return fmt.Sprintf("Invalid token: %s", err.subject)
+}
+
+func (err InvalidTokenError) Subject() string {
+	return err.subject
+}
+
+func NewInvalidTokenError(subject string) InvalidTokenError {
+	return InvalidTokenError{subject: subject}
+}

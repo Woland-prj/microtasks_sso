@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Woland-prj/microtasks_sso/internal/domain/entities"
-	"github.com/Woland-prj/microtasks_sso/internal/services/auth"
+	authservice "github.com/Woland-prj/microtasks_sso/internal/services/auth"
 )
 
 type Services struct {
@@ -19,9 +19,14 @@ type Storage interface {
 		user *entities.User,
 	) (int64, error)
 
-	GetUser(
+	GetUserByEmail(
 		ctx context.Context,
 		email string,
+	) (*entities.User, error)
+
+	GetUserById(
+		ctx context.Context,
+		uid int64,
 	) (*entities.User, error)
 
 	GetApp(

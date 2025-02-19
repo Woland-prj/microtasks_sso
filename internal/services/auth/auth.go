@@ -23,9 +23,13 @@ type UserSaver interface {
 }
 
 type UserProvider interface {
-	GetUser(
+	GetUserByEmail(
 		ctx context.Context,
 		email string,
+	) (*entities.User, error)
+	GetUserById(
+		ctx context.Context,
+		uid int64,
 	) (*entities.User, error)
 }
 
@@ -118,7 +122,7 @@ func (a *AuthService) Login(
 	a.log.With(slog.String("op", op))
 	a.log.Debug("login user")
 
-	usr, err := a.userProvider.GetUser(ctx, dto.Email)
+	usr, err := a.userProvider.GetUserByEmail(ctx, dto.Email)
 	if err != nil {
 		if errors.Is(err, &cerrors.NotFoundError{}) {
 			a.log.Warn("user not found", sl.Err(err))
@@ -152,6 +156,77 @@ func (a *AuthService) Login(
 	}
 
 	a.log.Debug("user logged in successfully", slog.String("uid", fmt.Sprintf("%v", usr.UID)))
+
+	a.log.Debug("generating tokens")
+
+	tokens, err := jwt.NewTokenPair(usr, app, a.authTokenTTL, a.refreshTokenTTL)
+	if err != nil {
+		a.log.Error("failed to generate tokens", sl.Err(err))
+		return nil, fmt.Errorf(
+			"%s: %w",
+			op,
+			cerrors.NewCriticalInternalError("jwt.NewTokenPair", err),
+		)
+	}
+
+	a.log.Debug(
+		"tokens generated",
+		slog.String("auth", tokens.AuthToken),
+		slog.String("refresh", tokens.RefreshToken),
+	)
+
+	return tokens, nil
+}
+
+func (a *AuthService) Refresh(
+	ctx context.Context,
+	dto dtos.RefreshDto,
+) (*entities.JwtTokenPair, error) {
+	const op = "authservice.Refresh"
+
+	a.log.With(slog.String("op", op))
+	a.log.Debug("getting app")
+
+	app, err := a.appProvider.GetApp(ctx, dto.AppId)
+	if err != nil {
+		if errors.Is(err, &cerrors.NotFoundError{}) {
+			a.log.Warn("app not found", sl.Err(err))
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		a.log.Error("failed to get app from storage", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	a.log.Debug("validating token")
+
+	uid, err := jwt.ValidateToken(dto.RefreshToken, app.RefreshSecret)
+	if err != nil {
+		var cErr cerrors.InvalidTokenError
+		if errors.As(err, &cErr) {
+			switch(cErr.Subject()) {
+			  case cerrors.TokenExpired:
+					a.log.Warn("token expired", sl.Err(err))
+					return nil, fmt.Errorf("%s: %w", op, err)
+				case cerrors.TokenBadFormat:
+					a.log.Warn("token bad format", sl.Err(err))
+					return nil, fmt.Errorf("%s: %w", op, err)
+			} 
+		}
+		a.log.Error("failed to validate token", sl.Err(err))
+		return nil, cerrors.NewCriticalInternalError("jwt.IsTokenValid", err) 
+	}
+
+	a.log.Debug("getting user")
+
+	usr, err := a.userProvider.GetUserById(ctx, uid)
+	if err != nil {
+		if errors.Is(err, &cerrors.NotFoundError{}) {
+			a.log.Warn("user not found", sl.Err(err))
+			return nil, cerrors.NewInvalidCredentialsError()
+		}
+		a.log.Error("failed to get user from storage", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
 
 	a.log.Debug("generating tokens")
 

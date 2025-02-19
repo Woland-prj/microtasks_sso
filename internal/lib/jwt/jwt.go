@@ -3,6 +3,7 @@ package jwt
 import (
 	"time"
 
+	"github.com/Woland-prj/microtasks_sso/internal/domain/cerrors"
 	"github.com/Woland-prj/microtasks_sso/internal/domain/entities"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -55,4 +56,27 @@ func newToken(
 	}
 
 	return tokenString, nil
+}
+
+func ValidateToken(token string, secret string) (int64, error) {
+	parsedToken, err := parseToken(token, secret)
+	if err != nil {
+		return 0, cerrors.NewInvalidTokenError(cerrors.TokenBadFormat)
+	}
+
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		if int64(claims["exp"].(float64)) <= time.Now().Unix() {
+			return 0, cerrors.NewInvalidTokenError(cerrors.TokenExpired)
+		}
+
+		return int64(claims["id"].(float64)), nil
+	}
+
+	return 0, cerrors.NewInvalidTokenError(cerrors.TokenBadFormat)
+}
+
+func parseToken(token string, secret string) (*jwt.Token, error) {
+	return jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
 }

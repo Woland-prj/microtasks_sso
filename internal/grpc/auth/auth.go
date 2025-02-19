@@ -23,6 +23,10 @@ type AuthService interface {
 		ctx context.Context,
 		dto dtos.RegisterDto,
 	) (int64, error)
+	Refresh(
+		ctx context.Context,
+		dto dtos.RefreshDto,
+	) (*entities.JwtTokenPair, error)
 }
 
 type serverAPI struct {
@@ -49,7 +53,7 @@ func (s *serverAPI) Login(
 	}
 
 	if err := s.validate.Struct(dto); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, "Invalid credentials")
 	}
 
 	tokens, err := s.authService.Login(ctx, dto)
@@ -77,7 +81,7 @@ func (s *serverAPI) Register(
 	}
 
 	if err := s.validate.Struct(dto); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, "Invalid credentials")
 	}
 
 	uid, err := s.authService.Register(ctx, dto)
@@ -92,5 +96,40 @@ func (s *serverAPI) Register(
 
 	return &ssov1.RegisterRespones{
 		Uid: uid,
+	}, nil
+}
+
+func (s *serverAPI) Refresh(
+	ctx context.Context,
+	r *ssov1.RefreshRequest,
+) (*ssov1.LoginRespones, error) {
+
+	dto := dtos.RefreshDto{
+		RefreshToken: r.GetRefreshToken(),
+		AppId:        r.GetAppId(),
+	}
+
+	if err := s.validate.Struct(dto); err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Bad format")
+	}
+
+	tokens, err := s.authService.Refresh(ctx, dto)
+
+	if err != nil {
+		var cErr cerrors.InvalidTokenError
+		if errors.As(err, &cErr) {
+			switch(cErr.Subject()) {
+				case cerrors.TokenExpired:
+					return nil, status.Error(codes.Unauthenticated, "Token expired")
+				case cerrors.TokenBadFormat:
+					return nil, status.Error(codes.Unauthenticated, "Fake token")
+			}
+		}
+		return nil, status.Error(codes.Internal, "Internal error")
+	}
+
+	return &ssov1.LoginRespones{
+		AuthToken:    tokens.AuthToken,
+		RefreshToken: tokens.RefreshToken,
 	}, nil
 }
