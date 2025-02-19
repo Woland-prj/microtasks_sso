@@ -2,9 +2,10 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
@@ -12,6 +13,7 @@ type Config struct {
 	StoragePath string         `yaml:"storage_path" env-required:"true"`
 	TokenTTL    TokenTTLConfig `yaml:"token_ttl" env-required:"true"`
 	GRPC        GRPCConfig     `yaml:"grpc" env-required:"true"`
+	HTTP        HTTPConfig     `yaml:"http" env-required:"true"`
 }
 
 type GRPCConfig struct {
@@ -22,6 +24,13 @@ type GRPCConfig struct {
 type TokenTTLConfig struct {
 	Auth    time.Duration `yaml:"auth" env-required:"true"`
 	Refresh time.Duration `yaml:"refresh" env-required:"true"`
+}
+
+type HTTPConfig struct {
+	Port int `yaml:"port" env-required:"true"`
+	Timeout time.Duration `yaml:"timeout" env-default:"4s"`
+	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
+	StopTimeout time.Duration `yaml:"stop_timeout" env-default:"10s"`
 }
 
 // MustLoad trying to read config in yaml format.

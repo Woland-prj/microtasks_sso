@@ -2,9 +2,10 @@ package app
 
 import (
 	"log/slog"
-	"time"
 
 	grpc_app "github.com/Woland-prj/microtasks_sso/internal/app/grpc"
+	http_app "github.com/Woland-prj/microtasks_sso/internal/app/http"
+	"github.com/Woland-prj/microtasks_sso/internal/config"
 	"github.com/Woland-prj/microtasks_sso/internal/lib/logger/sl"
 	"github.com/Woland-prj/microtasks_sso/internal/services"
 	"github.com/Woland-prj/microtasks_sso/internal/storage/sqlite"
@@ -15,24 +16,37 @@ type App struct {
 	log      *slog.Logger
 	srvs     *services.Services
 	GRPCServ *grpc_app.App
+	HTTPServ *http_app.App
 }
 
 func New(
 	log *slog.Logger,
-	grpcPort int,
-	storagePath string,
-	authTokenTTL time.Duration,
-	refreshTokenTTL time.Duration,
+	cfg *config.Config,
 ) *App {
-	storage := mustCreateSqliteStorage(log, storagePath)
-	services := services.New(log, storage, authTokenTTL, refreshTokenTTL)
+	storage := mustCreateSqliteStorage(log, cfg.StoragePath)
+	services := services.New(
+		log, 
+		storage, 
+		cfg.TokenTTL.Auth, 
+		cfg.TokenTTL.Refresh,
+	)
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	grpcapp := grpc_app.New(log, grpcPort, services, validate)
+	grpcapp := grpc_app.New(log, cfg.GRPC.Port, services, validate)
+	httpapp := http_app.New(
+		log, 
+		cfg.HTTP.Port, 
+		cfg.HTTP.Timeout, 
+		cfg.HTTP.IdleTimeout, 
+		cfg.HTTP.StopTimeout, 
+		services, 
+		validate,
+	)
 
 	return &App{
 		log:      log,
 		srvs:     services,
 		GRPCServ: grpcapp,
+		HTTPServ: httpapp,
 	}
 }
 

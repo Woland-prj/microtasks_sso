@@ -27,15 +27,10 @@ func main() {
 	log.Debug("Logger init")
 
 	// Run app
-	application := app.New(
-		log,
-		conf.GRPC.Port,
-		conf.StoragePath,
-		conf.TokenTTL.Auth,
-		conf.TokenTTL.Refresh,
-	)
+	application := app.New(log, conf)
 
 	go application.GRPCServ.MustRun()
+	go application.HTTPServ.MustRun()
 
 	// Graceful shutdown
 	chanStop := make(chan os.Signal, 1)
@@ -45,6 +40,7 @@ func main() {
 	log.Info("Trying stop application", slog.String("signal", stopSignal.String()))
 
 	application.GRPCServ.Stop()
+	application.HTTPServ.Stop()
 	log.Info("Application stopped")
 }
 
